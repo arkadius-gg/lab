@@ -1,0 +1,11 @@
+# Gestión del Mac y documentación: solo en local, nunca en GitHub
+host/
+docs/
+
+# Python
+.venv/
+__pycache__/
+
+# Claves age (por si acaso: la privada vive solo en el Mac)
+*.agekey
+keys.txt
