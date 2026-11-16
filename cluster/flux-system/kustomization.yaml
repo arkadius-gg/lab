@@ -1,0 +1,14 @@
+# Los gotk-*.yaml los escribe "flux bootstrap". El parche lleva los controladores de Flux al
+# nodo plataforma (que tiene el taint CriticalAddonsOnly).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: [gotk-components.yaml, gotk-sync.yaml]
+patches:
+  - target: {kind: Deployment}
+    patch: |
+      - op: add
+        path: /spec/template/spec/nodeSelector
+        value: {lab/rol: plataforma}
+      - op: add
+        path: /spec/template/spec/tolerations
+        value: [{key: CriticalAddonsOnly, operator: Exists}]

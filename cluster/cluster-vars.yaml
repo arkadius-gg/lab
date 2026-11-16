@@ -1,0 +1,9 @@
+# Variables que Flux sustituye (${dominio_base}, ${telegram_chat_id}) en la Kustomization plataforma.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-vars
+  namespace: flux-system
+data:
+  dominio_base: "192.168.1.139.nip.io"
+  telegram_chat_id: "0"   # se rellena en la Task 11

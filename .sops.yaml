@@ -1,0 +1,5 @@
+# SOPS: cifra solo data/stringData de los ficheros *.sops.yaml con la clave age del Mac.
+creation_rules:
+  - path_regex: '\.sops\.yaml$'
+    encrypted_regex: '^(data|stringData)$'
+    age: age1ykzgdrxd8dsq5pm386pncyhvp8daf5kwf4p89e3w94gpnvv99uqsrylwkq
