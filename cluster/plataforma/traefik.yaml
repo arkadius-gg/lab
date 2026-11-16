@@ -1,0 +1,24 @@
+# Traefik de k3s con Gateway API: crea la Gateway kube-system/traefik-gateway, con el listener
+# web (HTTP) abierto a HTTPRoute de cualquier namespace. Va a plataforma, junto a su svclb.
+# Claves comprobadas en el chart traefik/traefik 41.6.1 (el que trae k3s v1.37.2+k3s1).
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    nodeSelector:
+      lab/rol: plataforma
+    # Sustituye la lista de k3s (Helm no mezcla listas): CriticalAddonsOnly es el taint de plataforma.
+    tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+    providers:
+      kubernetesGateway:
+        enabled: true
+    gateway:
+      listeners:
+        web:
+          namespacePolicy:
+            from: All
