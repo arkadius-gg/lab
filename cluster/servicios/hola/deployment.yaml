@@ -26,6 +26,10 @@ spec:
             httpGet: {path: /readyz, port: http}
           livenessProbe:
             httpGet: {path: /healthz, port: http}
+          # Al borrar el pod, Traefik tarda ~2 s (providersThrottleDuration) en dejar de enviarle
+          # peticiones; sin esta espera el SIGTERM cierra el servidor antes y sale un 502.
+          lifecycle:
+            preStop: {sleep: {seconds: 5}}
           resources:
             requests: {cpu: 10m, memory: 48Mi}
             limits: {memory: 128Mi}
