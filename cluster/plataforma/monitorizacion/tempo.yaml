@@ -1,0 +1,30 @@
+# Tempo (trazas) en plataforma, retención 3 días. OTLP gRPC 4317 / HTTP 4318, consultas 3200.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tempo
+  namespace: monitorizacion
+spec:
+  interval: 1h
+  timeout: 15m
+  dependsOn: [{name: kps}]
+  chart:
+    spec:
+      chart: tempo
+      version: 3.2.1
+      sourceRef:
+        kind: HelmRepository
+        name: grafana-community
+  values:
+    tempo:
+      retention: 72h
+      receivers:
+        otlp:
+          protocols:
+            grpc: {endpoint: 0.0.0.0:4317}
+            http: {endpoint: 0.0.0.0:4318}
+    persistence:   # sin storageClassName en este chart: usa la clase por defecto (local-path)
+      enabled: true
+      size: 3Gi
+    nodeSelector: {lab/rol: plataforma}
+    tolerations: [{key: CriticalAddonsOnly, operator: Exists}]

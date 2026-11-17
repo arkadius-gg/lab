@@ -99,6 +99,22 @@ spec:
       grafana.ini:
         server:
           root_url: http://grafana.${dominio_base}
+      additionalDataSources:
+        - name: Loki
+          uid: loki
+          type: loki
+          url: http://loki.monitorizacion.svc:3100
+          jsonData:
+            derivedFields:
+              # Doble dólar: Flux lo deja en uno, y Grafana recibe su variable __value.raw.
+              - {name: trace_id, matcherType: label, matcherRegex: trace_id, datasourceUid: tempo, url: '$${__value.raw}'}
+        - name: Tempo
+          uid: tempo
+          type: tempo
+          url: http://tempo.monitorizacion.svc:3200
+          jsonData:
+            tracesToLogsV2: {datasourceUid: loki, filterByTraceID: true}
+            serviceMap: {datasourceUid: prometheus}
 
     kube-state-metrics:
       nodeSelector: {lab/rol: plataforma}

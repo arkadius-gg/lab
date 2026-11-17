@@ -9,3 +9,6 @@ resources:
   - monitorizacion/repos.yaml
   - monitorizacion/kube-prometheus-stack.yaml
   - monitorizacion/grafana-ruta.yaml
+  - monitorizacion/loki.yaml
+  - monitorizacion/tempo.yaml
+  - monitorizacion/otel-collector.yaml
