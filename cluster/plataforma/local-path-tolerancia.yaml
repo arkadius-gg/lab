@@ -1,0 +1,27 @@
+# local-path (de k3s) crea un pod auxiliar en el nodo de cada volumen nuevo. plataforma tiene el
+# taint CriticalAddonsOnly:NoExecute, así que sin esta toleración ese pod se desaloja al momento
+# y los PVC de plataforma no se crean nunca. Solo se declara helperPod.yaml (copia del de k3s
+# v1.37.2 + tolerations): las demás claves de local-path-config siguen siendo de k3s.
+# ponytail: si k3s vuelve a aplicar su manifiesto (al actualizarse), Flux lo corrige en ≤10 min.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-path-config
+  namespace: kube-system
+data:
+  helperPod.yaml: |-
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: helper-pod
+    spec:
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+      containers:
+      - name: helper-pod
+        image: "rancher/mirrored-library-busybox:1.37.0"
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          seLinuxOptions:
+            level: s0-s0:c0.c1023
