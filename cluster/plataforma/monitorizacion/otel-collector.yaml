@@ -33,7 +33,8 @@ spec:
         filelog:
           operators:   # sustituye a la lista del preset: hay que repetir el parser de contenedor
             - {type: container, id: container-parser}
-            - {type: json_parser, if: 'body matches "^\{"', parse_from: body, parse_to: attributes}
+            # ^[{] y no ^\{: sin barras invertidas no hay escapes que se pierdan por el camino.
+            - {type: json_parser, if: 'body matches "^[{]"', parse_from: body, parse_to: attributes}
             - {type: trace_parser, if: 'attributes.trace_id != nil', trace_id: {parse_from: attributes.trace_id}, span_id: {parse_from: attributes.span_id}}
       exporters:
         otlphttp/loki: {endpoint: http://loki.monitorizacion.svc:3100/otlp}
