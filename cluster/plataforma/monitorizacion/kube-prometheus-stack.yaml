@@ -68,9 +68,9 @@ spec:
           receiver: telegram
           group_by: [alertname, namespace]
           routes:
-            # Latido cada 5 min a healthchecks.io: si deja de llegar, avisa por Telegram.
-            - {matchers: ['alertname="Watchdog"'], receiver: healthchecks, group_wait: 0s, group_interval: 1m, repeat_interval: 5m}
-            - {matchers: ['alertname="InfoInhibitor"'], receiver: "null"}
+            # Watchdog siempre está activa: no se envía (sin interruptor de hombre muerto,
+            # decisión del usuario 2026-11-17). Sin esta ruta, iría a Telegram cada 4 h.
+            - {matchers: ['alertname=~"Watchdog|InfoInhibitor"'], receiver: "null"}
         receivers:
           - name: "null"
           - name: telegram
@@ -81,9 +81,6 @@ spec:
               - bot_token_file: /etc/alertmanager/secrets/alertmanager-externos/telegram-token
                 chat_id: ${telegram_chat_id}
                 send_resolved: true
-          - name: healthchecks
-            webhook_configs:
-              - {url_file: /etc/alertmanager/secrets/alertmanager-externos/healthchecks-url, send_resolved: false}
 
     grafana:
       nodeSelector: {lab/rol: plataforma}
