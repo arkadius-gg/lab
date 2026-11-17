@@ -2,4 +2,4 @@
 # subcarpetas por su cuenta, donde hay ficheros que solo se pueden aplicar descifrados.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources: [flux-system, cluster-vars.yaml, plataforma.yaml]
+resources: [flux-system, cluster-vars.yaml, plataforma.yaml, servicios.yaml]
