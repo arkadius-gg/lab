@@ -1,0 +1,27 @@
+# Errores de Flux (Kustomizations y la HelmRelease de monitorización) a Telegram.
+apiVersion: notification.toolkit.fluxcd.io/v1
+kind: Provider
+metadata:
+  name: telegram
+  namespace: flux-system
+spec:
+  type: telegram
+  # Literal, sin la variable telegram_chat_id: la sustitución de Flux lo convierte en número (ni las
+  # comillas ni !!str sobreviven a kustomize) y el CRD exige un string. Es el mismo valor que
+  # telegram_chat_id en cluster/cluster-vars.yaml: si cambia, cambiarlo en los dos sitios.
+  channel: "14240465"
+  secretRef:
+    name: telegram
+---
+apiVersion: notification.toolkit.fluxcd.io/v1
+kind: Alert
+metadata:
+  name: errores
+  namespace: flux-system
+spec:
+  providerRef:
+    name: telegram
+  eventSeverity: error
+  eventSources:
+    - {kind: Kustomization, name: '*'}
+    - {kind: HelmRelease, name: '*', namespace: monitorizacion}
