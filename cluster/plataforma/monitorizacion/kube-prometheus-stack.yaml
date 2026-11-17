@@ -106,8 +106,10 @@ spec:
           url: http://loki.monitorizacion.svc:3100
           jsonData:
             derivedFields:
-              # Doble dólar: Flux lo deja en uno, y Grafana recibe su variable __value.raw.
-              - {name: trace_id, matcherType: label, matcherRegex: trace_id, datasourceUid: tempo, url: '$${__value.raw}'}
+              # Cuatro dólares: Flux convierte cada par en uno (quedan dos) y Grafana, que también
+              # sustituye variables de entorno al cargar datasources, deja uno. Grafana tiene que
+              # acabar con su propia variable __value.raw entre llaves, no con una cadena vacía.
+              - {name: trace_id, matcherType: label, matcherRegex: trace_id, datasourceUid: tempo, url: '$$$${__value.raw}'}
         - name: Tempo
           uid: tempo
           type: tempo
