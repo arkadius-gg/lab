@@ -1,0 +1,26 @@
+# Los servicios (cluster/servicios/<servicio>/), después de plataforma. Sin kustomization.yaml en
+# cluster/servicios/: Flux genera uno con cada subcarpeta.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: servicios
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ./cluster/servicios
+  prune: true
+  wait: true
+  timeout: 5m
+  dependsOn:
+    - name: plataforma
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: cluster-vars

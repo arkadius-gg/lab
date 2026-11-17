@@ -1,0 +1,38 @@
+# hola: 2 réplicas en el nodo servicios; manda trazas y métricas al collector de su nodo.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hola
+  namespace: hola
+spec:
+  replicas: 2
+  strategy:
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+  selector:
+    matchLabels: {app: hola}
+  template:
+    metadata:
+      labels: {app: hola}
+    spec:
+      nodeSelector: {lab/rol: servicios}
+      containers:
+        - name: hola
+          image: ghcr.io/arkadius-gg/hola   # la etiqueta la pone kustomization.yaml (la escribe el CI)
+          ports: [{name: http, containerPort: 8080}]
+          env:
+            - {name: OTEL_SERVICE_NAME, value: hola}
+            - {name: OTEL_EXPORTER_OTLP_ENDPOINT, value: "http://otel-collector.monitorizacion.svc:4318"}
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+          resources:
+            requests: {cpu: 10m, memory: 48Mi}
+            limits: {memory: 128Mi}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+            seccompProfile: {type: RuntimeDefault}

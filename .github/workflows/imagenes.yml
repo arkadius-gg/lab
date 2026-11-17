@@ -1,0 +1,91 @@
+# Construye y publica en ghcr.io las imágenes de apps/<servicio>/ y escribe la etiqueta nueva en
+# cluster/servicios/<servicio>/kustomization.yaml con un commit "ci: …". Flux la despliega.
+name: imagenes
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: imagenes
+  cancel-in-progress: false
+
+jobs:
+  detectar:
+    runs-on: ubuntu-latest
+    outputs:
+      servicios: ${{ steps.lista.outputs.servicios }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: lista
+        # Base = último commit "ci:" de main, no github.event.before: con concurrency, GitHub
+        # cancela la ejecución pendiente cuando llega una tercera y sus cambios se perderían.
+        # Si una ejecución falla no deja commit "ci:", y la siguiente vuelve a incluir sus cambios.
+        run: |
+          base=$(git log -1 --format=%H --grep='^ci: ' origin/main)
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [ -z "$base" ]; then
+            candidatos=$(for d in apps/*/; do basename "$d"; done)
+          else
+            candidatos=$(git diff --name-only "$base" "$GITHUB_SHA" -- apps/ | cut -d/ -f2 | sort -u)
+          fi
+          servicios=$(for s in $candidatos; do if [ -f "apps/$s/Dockerfile" ]; then echo "$s"; fi; done | jq -R . | jq -sc .)
+          echo "servicios=$servicios" >> "$GITHUB_OUTPUT"
+          echo "Servicios: $servicios (base: ${base:-ninguna})"
+
+  construir:
+    needs: detectar
+    if: needs.detectar.outputs.servicios != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        servicio: ${{ fromJSON(needs.detectar.outputs.servicios) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: sha
+        run: echo "corto=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v7
+        with:
+          context: apps/${{ matrix.servicio }}
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/arkadius-gg/${{ matrix.servicio }}:${{ steps.sha.outputs.corto }}
+          labels: org.opencontainers.image.source=https://github.com/arkadius-gg/lab
+
+  etiquetar:
+    needs: [detectar, construir]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - env:
+          SERVICIOS: ${{ needs.detectar.outputs.servicios }}
+        run: |
+          corto=${GITHUB_SHA::7}
+          for s in $(jq -r '.[]' <<<"$SERVICIOS"); do
+            k=cluster/servicios/$s/kustomization.yaml
+            if [ -f "$k" ]; then
+              yq -i "(.images[] | select(.name == \"ghcr.io/arkadius-gg/$s\")).newTag = \"$corto\"" "$k"
+            fi
+          done
+          if git diff --quiet; then echo "Nada que etiquetar"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "ci: $(jq -r 'join(", ")' <<<"$SERVICIOS") → $corto"
+          for intento in 1 2 3; do
+            if git pull --rebase origin main && git push; then exit 0; fi
+            sleep 5
+          done
+          exit 1
