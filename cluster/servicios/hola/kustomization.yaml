@@ -3,4 +3,4 @@ kind: Kustomization
 resources: [namespace.yaml, deployment.yaml, service.yaml, httproute.yaml]
 images:
   - name: ghcr.io/arkadius-gg/hola
-    newTag: "24971e7" # la reescribe el CI (.github/workflows/imagenes.yml) en cada imagen nueva
+    newTag: "cb29ad6" # la reescribe el CI (.github/workflows/imagenes.yml) en cada imagen nueva
